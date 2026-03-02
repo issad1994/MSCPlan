@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MSc Live Command Center</title>
+    <style>
+        :root { --msc: #003366; --res: #2e7d32; --pass: #22c55e; --resit: #facc15; --repeat: #ef4444; --bg: #f8fafc; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; }
+        .container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); width: 100%; max-width: 1150px; }
+        
+        /* Dashboard & Progress */
+        .dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .stat-card { padding: 15px; border-radius: 12px; text-align: center; color: white; }
+        .stat-val { font-size: 24px; font-weight: 800; display: block; }
+        .overall-progress { background: #e2e8f0; height: 12px; border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+        #progress-fill { height: 100%; background: var(--pass); width: 0%; transition: width 1s ease; }
+
+        /* Navigation */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; }
+        .tab-btn { padding: 10px 15px; border: none; background: none; cursor: pointer; font-weight: 600; color: #888; }
+        .tab-btn.active { color: var(--msc); border-bottom: 4px solid var(--msc); }
+
+        /* Table Styling */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
+        th { background: #f1f5f9; text-align: left; padding: 10px; font-size: 11px; color: #475569; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+        
+        .row-repeat, .row-missed { background-color: #fef2f2 !important; color: #991b1b; }
+        .row-resit { background-color: #fffbeb !important; color: #92400e; }
+        
+        .sync-tray { margin-top: 30px; padding: 15px; background: #f1f5f9; border-radius: 8px; display: flex; gap: 10px; align-items: center; }
+        .btn-sync { padding: 8px 12px; font-size: 12px; border-radius: 5px; border: 1px solid #cbd5e1; cursor: pointer; background: white; }
+        
+        .hidden { display: none; }
+        input, select { width: 100%; padding: 5px; border: 1px solid #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 style="color:var(--msc); margin-top:0;">MSc Online Tracker</h2>
+    
+    <div class="dashboard">
+        <div class="stat-card" style="background: var(--msc);"><span class="stat-val" id="totalCount">31</span><span>Modules</span></div>
+        <div class="stat-card" style="background: var(--pass);"><span class="stat-val" id="passCount">0</span><span>Passed</span></div>
+        <div class="stat-card" style="background: var(--resit);"><span class="stat-val" id="resitCount">0</span><span>Resits</span></div>
+        <div class="stat-card" style="background: var(--repeat);"><span class="stat-val" id="repeatCount">0</span><span>Repeats</span></div>
+    </div>
+
+    <div class="overall-progress"><div id="progress-fill"></div></div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('Tasks')">MSc Tasks</button>
+        <button class="tab-btn" onclick="showTab('Results')">Academic Results</button>
+    </div>
+
+    <div id="tasksSection">
+        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 8px; margin-bottom: 20px; background: #f9f9f9; padding: 15px; border-radius: 8px;">
+            <input type="text" id="tSub" placeholder="Subject">
+            <input type="date" id="tDate">
+            <select id="tStatus">
+                <option value="Progress">In Progress</option>
+                <option value="Complete">Complete</option>
+                <option value="Missed">Missed</option>
+            </select>
+            <button onclick="addTask()" style="background:var(--msc); color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">Add</button>
+            <input type="text" id="tDesc" placeholder="Description" style="grid-column: span 4;">
+        </div>
+        <table>
+            <thead><tr><th width="15%">Date</th><th width="20%">Subject</th><th width="45%">Description</th><th width="15%">Status</th><th width="5%"></th></tr></thead>
+            <tbody id="mscBody"></tbody>
+        </table>
+    </div>
+
+    <div id="resultsSection" class="hidden">
+        <table>
+            <thead>
+                <tr><th width="10%">Code</th><th width="35%">Subject Name</th><th width="8%">Sem</th><th width="10%">CAT</th><th width="10%">Assmt</th><th width="15%">Remark</th><th width="5%"></th></tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+        </table>
+    </div>
+
+    <div class="sync-tray">
+        <span style="font-size:12px; font-weight:bold; color:#475569;">DEVICE SYNC:</span>
+        <button class="btn-sync" onclick="exportData()">Download Backup</button>
+        <button class="btn-sync" onclick="importData()">Restore Backup</button>
+    </div>
+</div>
+
+<script>
+    const curriculum = [
+        { code: 'DMX9301', name: 'Circular Economy towards Energy', sem: 'Y1S1' },
+        { code: 'DMX9102', name: 'Intro to Renewable Energy', sem: 'Y1S1' },
+        { code: 'DMX9303', name: 'Applied Thermal Engineering', sem: 'Y1S1' },
+        { code: 'DMX9104', name: 'Thermal Energy Conversion', sem: 'Y1S1' },
+        { code: 'DMX9205', name: 'Professional Ethics', sem: 'Y1S1' },
+        { code: 'DMX9106', name: 'Report Writing', sem: 'Y1S1' },
+        { code: 'DMX9707', name: 'Entrepreneurial Challenges', sem: 'Y1S1' },
+        { code: 'DMX9108', name: 'Life Cycle Analysis', sem: 'Y1S1' },
+        { code: 'DMX9209', name: 'Sustainable Transport', sem: 'Y1S1' },
+        { code: 'DMX9110', name: 'Hydrogen & Fuel Cells', sem: 'Y1S1' },
+        { code: 'DMX9111', name: 'Thermochemical Principles', sem: 'Y1S1' },
+        { code: 'DMX9312', name: 'Renewable Energy Systems', sem: 'Y1S2' },
+        { code: 'DMX9213', name: 'Research Methodology', sem: 'Y1S2' },
+        { code: 'DMX9114', name: 'Computational Tools', sem: 'Y1S2' },
+        { code: 'DMX9215', name: 'Project Management', sem: 'Y1S2' },
+        { code: 'DMX9216', name: 'Op & Maint of Systems', sem: 'Y1S2' },
+        { code: 'DMX9117', name: 'Nuclear Energy', sem: 'Y1S2' },
+        { code: 'DMX9118', name: 'Geothermal Energy', sem: 'Y1S2' },
+        { code: 'DMX9119', name: 'Ocean Energy', sem: 'Y1S2' },
+        { code: 'DMX9120', name: 'Modern Leadership', sem: 'Y1S2' },
+        { code: 'DMXA301', name: 'Energy Supply for Industry', sem: 'Y2S1' },
+        { code: 'DMXA302', name: 'Energy Auditing', sem: 'Y2S1' },
+        { code: 'DMXA203', name: 'Pollution & Waste Mgmt', sem: 'Y2S1' },
+        { code: 'DMXA204', name: 'Energy Storage', sem: 'Y2S1' },
+        { code: 'DMXA205', name: 'Renewable for Industry', sem: 'Y2S1' },
+        { code: 'DMXA206', name: 'Energy Business', sem: 'Y2S1' },
+        { code: 'DMXA107', name: 'Biorefinery Tech', sem: 'Y2S1' },
+        { code: 'DMXA108', name: 'Net-zero Buildings', sem: 'Y2S1' },
+        { code: 'DMXA109', name: 'Energy Plantations', sem: 'Y2S1' },
+        { code: 'DMXA110', name: 'Smart Electrical Systems', sem: 'Y2S1' },
+        { code: 'DMXAFOO', name: 'Research Project', sem: 'Y2S2' }
+    ];
+
+    let db = JSON.parse(localStorage.getItem('msc_online_v1')) || { 
+        tasks: [], 
+        results: curriculum.map(c => ({...c, cat: '', ass: '', rem: 'Pending', isExtra: false})) 
+    };
+
+    function addTask() {
+        const task = { sub: document.getElementById('tSub').value, date: document.getElementById('tDate').value, status: document.getElementById('tStatus').value, desc: document.getElementById('tDesc').value };
+        if(task.sub && task.date) { db.tasks.push(task); sync(); ['tSub','tDate','tDesc'].forEach(id => document.getElementById(id).value = ''); }
+    }
+
+    function updateResult(index, field, value) {
+        db.results[index][field] = value;
+        if (field === 'rem' && (value === 'Resit' || value === 'Repeat')) {
+            const next = db.results[index + 1];
+            if (!next || next.code !== db.results[index].code || !next.isExtra) {
+                db.results.splice(index + 1, 0, {...db.results[index], cat:'', ass:'', rem:'Pending', isExtra:true});
+            }
+        }
+        sync();
+    }
+
+    function sync() { localStorage.setItem('msc_online_v1', JSON.stringify(db)); render(); }
+
+    function exportData() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "msc_backup.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    function importData() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.onchange = e => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = event => {
+                db = JSON.parse(event.target.result);
+                sync();
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    }
+
+    function render() {
+        let stats = { pass: 0, resit: 0, repeat: 0, total: 31 };
+        document.getElementById('mscBody').innerHTML = db.tasks.map((t, i) => `
+            <tr class="${t.status === 'Missed' ? 'row-missed' : ''}">
+                <td>${t.date}</td><td><strong>${t.sub}</strong></td><td>${t.desc}</td><td>${t.status}</td>
+                <td><button onclick="db.tasks.splice(${i},1); sync();" style="color:red;border:none;background:none;cursor:pointer;">✕</button></td>
+            </tr>`).join('');
+
+        document.getElementById('resultsBody').innerHTML = db.results.map((r, i) => {
+            if(r.rem === 'Pass') stats.pass++;
+            if(r.rem === 'Resit') stats.resit++;
+            if(r.rem === 'Repeat') stats.repeat++;
+            let cls = r.rem === 'Repeat' ? 'row-repeat' : (r.rem === 'Resit' ? 'row-resit' : '');
+            return `<tr class="${cls}">
+                <td><small>${r.code}</small></td>
+                <td><strong>${r.name}</strong>${r.isExtra?' (Re)':''}</td>
+                <td>${r.sem}</td>
+                <td><input type="text" value="${r.cat}" onchange="updateResult(${i},'cat',this.value)"></td>
+                <td><input type="text" value="${r.ass}" onchange="updateResult(${i},'ass',this.value)"></td>
+                <td><select onchange="updateResult(${i},'rem',this.value)">
+                    <option value="Pending" ${r.rem==='Pending'?'selected':''}>Pending</option>
+                    <option value="Pass" ${r.rem==='Pass'?'selected':''}>Pass</option>
+                    <option value="Resit" ${r.rem==='Resit'?'selected':''}>Resit</option>
+                    <option value="Repeat" ${r.rem==='Repeat'?'selected':''}>Repeat</option>
+                </select></td>
+                <td>${r.isExtra ? `<button onclick="db.results.splice(${i},1); sync();" style="border:none;background:none;color:red;cursor:pointer;">✕</button>` : ''}</td>
+            </tr>`;
+        }).join('');
+
+        document.getElementById('passCount').innerText = stats.pass;
+        document.getElementById('resitCount').innerText = stats.resit;
+        document.getElementById('repeatCount').innerText = stats.repeat;
+        document.getElementById('progress-fill').style.width = Math.round((stats.pass / stats.total) * 100) + '%';
+    }
+
+    function showTab(t) {
+        document.getElementById('tasksSection').classList.toggle('hidden', t !== 'Tasks');
+        document.getElementById('resultsSection').classList.toggle('hidden', t === 'Tasks');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.innerText.includes(t)));
+    }
+    render();
+</script>
+</body>
+</html>

@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>MSc Master Tracker (Unified)</title>
+    <title>MSc Master Tracker (Full Control)</title>
     <style>
         :root { --msc: #003366; --res: #2e7d32; --pass: #22c55e; --resit: #facc15; --repeat: #ef4444; --bg: #f8fafc; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; }
-        .container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); width: 100%; max-width: 1200px; }
+        .container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); width: 100%; max-width: 1250px; }
         
-        /* Stats Dashboard */
         .analytics-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 25px; }
         .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
         .stat-card { padding: 15px; border-radius: 12px; text-align: center; color: white; }
@@ -22,40 +21,39 @@
         .tab-btn { padding: 10px 15px; border: none; background: none; cursor: pointer; font-weight: 600; color: #888; }
         .tab-btn.active { color: var(--msc); border-bottom: 4px solid var(--msc); }
 
-        /* Table Styling */
+        /* Manage Subject Form */
+        .subject-manager { display: grid; grid-template-columns: 1fr 3fr 1fr auto; gap: 8px; margin-bottom: 20px; background: #f1f5f9; padding: 12px; border-radius: 8px; align-items: end; }
+        .manager-label { font-size: 11px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
         th { background: #f1f5f9; text-align: left; padding: 10px; font-size: 11px; color: #475569; border-bottom: 2px solid #e2e8f0; }
         td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
         
         .row-repeat, .row-missed { background-color: #fef2f2 !important; color: #991b1b; }
         .row-resit { background-color: #fffbeb !important; color: #92400e; }
-        .attempt-badge { font-size: 9px; background: #334155; color: white; padding: 2px 5px; border-radius: 4px; margin-left: 5px; }
-
-        input, select { width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; box-sizing: border-box; }
-        .btn-del { color: #ef4444; border: none; background: none; cursor: pointer; font-weight: bold; }
-        .hidden { display: none; }
         
-        .sync-tray { margin-top: 30px; padding: 15px; background: #f1f5f9; border-radius: 8px; display: flex; gap: 10px; align-items: center; }
-        .btn-sync { padding: 8px 12px; font-size: 12px; border-radius: 5px; border: 1px solid #cbd5e1; cursor: pointer; background: white; }
+        input, select { width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; box-sizing: border-box; }
+        .btn-add { background: var(--msc); color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-del { color: #ef4444; border: none; background: none; cursor: pointer; font-weight: bold; font-size: 16px; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="color:var(--msc); margin-top:0;">MSc Academic Hub (Unified)</h2>
+    <h2 style="color:var(--msc); margin-top:0;">MSc Academic Hub (Customizable)</h2>
     
     <div class="analytics-grid">
         <div class="dashboard">
             <div class="stat-card" style="background: var(--pass);"><span class="stat-val" id="passCount">0</span><span>Passed</span></div>
             <div class="stat-card" style="background: var(--resit);"><span class="stat-val" id="resitCount">0</span><span>Resits</span></div>
             <div class="stat-card" style="background: var(--repeat);"><span class="stat-val" id="repeatCount">0</span><span>Repeats</span></div>
-            <div class="stat-card" style="background: #64748b;"><span class="stat-val" id="pendingCount">31</span><span>Pending</span></div>
+            <div class="stat-card" style="background: #64748b;"><span class="stat-val" id="totalCount">0</span><span>Total Modules</span></div>
         </div>
         <div class="chart-container"><canvas id="performanceChart"></canvas></div>
     </div>
 
     <div class="overall-progress"><div id="progress-fill"></div></div>
-    <p id="progressText" style="text-align: right; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 25px;">Completion: 0%</p>
 
     <div class="tabs">
         <button class="tab-btn active" onclick="showTab('Tasks')">MSc Tasks</button>
@@ -64,50 +62,51 @@
 
     <div id="tasksSection">
         <div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr auto; gap: 10px; margin-bottom: 20px; background: #f9f9f9; padding: 15px; border-radius: 8px;">
-            <input type="text" id="tSub" placeholder="Subject">
+            <input type="text" id="tSub" placeholder="Subject Name">
             <input type="date" id="tDate">
             <select id="tStatus">
                 <option value="Progress">In Progress</option>
                 <option value="Complete">Complete</option>
                 <option value="Missed">Missed</option>
             </select>
-            <button onclick="addTask()" style="background:var(--msc); color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer;">Add Task</button>
-            <input type="text" id="tDesc" placeholder="Task Details" style="grid-column: span 4; margin-top:5px;">
+            <button onclick="addTask()" class="btn-add">Add Task</button>
+            <input type="text" id="tDesc" placeholder="Details..." style="grid-column: span 4; margin-top:5px;">
         </div>
         <table>
-            <thead><tr><th width="15%">Date</th><th width="20%">Subject</th><th width="45%">Description</th><th width="15%">Status</th><th width="5%"></th></tr></thead>
+            <thead><tr><th width="15%">Date</th><th width="25%">Subject</th><th width="40%">Description</th><th width="15%">Status</th><th width="5%"></th></tr></thead>
             <tbody id="mscBody"></tbody>
         </table>
     </div>
 
     <div id="resultsSection" class="hidden">
+        <div class="subject-manager">
+            <div><label class="manager-label">Code</label><input type="text" id="newCode" placeholder="e.g. DMXA301"></div>
+            <div><label class="manager-label">Subject Name</label><input type="text" id="newName" placeholder="Enter Module Title"></div>
+            <div><label class="manager-label">Semester</label><input type="text" id="newSem" placeholder="Y1S1"></div>
+            <button onclick="addNewSubject()" class="btn-add">Add Subject</button>
+        </div>
+
         <table>
             <thead>
                 <tr>
                     <th width="8%">Code</th>
-                    <th width="27%">Subject Name</th>
+                    <th width="25%">Subject Name</th>
                     <th width="7%">Sem</th>
                     <th width="10%">CAT</th>
                     <th width="10%">Assmt</th>
-                    <th width="13%">Final Result</th>
-                    <th width="17%">Remark</th>
-                    <th width="8%"></th>
+                    <th width="12%">Final Result</th>
+                    <th width="15%">Remark</th>
+                    <th width="5%"></th>
                 </tr>
             </thead>
             <tbody id="resultsBody"></tbody>
         </table>
     </div>
-
-    <div class="sync-tray">
-        <span style="font-size:12px; font-weight:bold; color:#475569;">DEVICE SYNC:</span>
-        <button class="btn-sync" onclick="exportData()">Download Backup (Mac)</button>
-        <button class="btn-sync" onclick="importData()">Restore Backup (Phone)</button>
-    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const curriculum = [
+    const defaultCurriculum = [
         { code: 'DMX9301', name: 'Circular Economy towards Energy', sem: 'Y1S1' },
         { code: 'DMX9102', name: 'Intro to Renewable Energy', sem: 'Y1S1' },
         { code: 'DMX9303', name: 'Applied Thermal Engineering', sem: 'Y1S1' },
@@ -141,12 +140,23 @@
         { code: 'DMXAFOO', name: 'Research Project', sem: 'Y2S2' }
     ];
 
-    let db = JSON.parse(localStorage.getItem('msc_unified_v1')) || { 
+    let db = JSON.parse(localStorage.getItem('msc_custom_v1')) || { 
         tasks: [], 
-        results: curriculum.map(c => ({...c, cat: '', ass: '', finalRes: '', rem: 'Pending', isExtra: false}))
+        results: defaultCurriculum.map(c => ({...c, cat: '', ass: '', finalRes: '', rem: 'Pending', isExtra: false}))
     };
 
     let performanceChart;
+
+    function addNewSubject() {
+        const code = document.getElementById('newCode').value;
+        const name = document.getElementById('newName').value;
+        const sem = document.getElementById('newSem').value;
+        if(code && name) {
+            db.results.push({ code, name, sem, cat: '', ass: '', finalRes: '', rem: 'Pending', isExtra: false });
+            ['newCode','newName','newSem'].forEach(id => document.getElementById(id).value = '');
+            sync();
+        }
+    }
 
     function addTask() {
         const task = { sub: document.getElementById('tSub').value, date: document.getElementById('tDate').value, status: document.getElementById('tStatus').value, desc: document.getElementById('tDesc').value };
@@ -164,44 +174,19 @@
         sync();
     }
 
-    function sync() { localStorage.setItem('msc_unified_v1', JSON.stringify(db)); render(); }
-
-    function exportData() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "msc_backup.json");
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-    }
-
-    function importData() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.onchange = e => {
-            const file = e.target.files[0];
-            const reader = new FileReader();
-            reader.onload = event => {
-                db = JSON.parse(event.target.result);
-                sync();
-            };
-            reader.readAsText(file);
-        };
-        input.click();
-    }
+    function sync() { localStorage.setItem('msc_custom_v1', JSON.stringify(db)); render(); }
 
     function render() {
-        let stats = { pass: 0, resit: 0, repeat: 0, total: 31 };
+        let stats = { pass: 0, resit: 0, repeat: 0, total: db.results.filter(r => !r.isExtra).length };
         
         // Render Tasks
         document.getElementById('mscBody').innerHTML = db.tasks.map((t, i) => `
             <tr class="${t.status === 'Missed' ? 'row-missed' : ''}">
                 <td>${t.date}</td><td><strong>${t.sub}</strong></td><td>${t.desc}</td><td>${t.status}</td>
-                <td><button onclick="db.tasks.splice(${i},1); sync();" style="color:red; border:none; background:none; cursor:pointer;">✕</button></td>
+                <td><button onclick="db.tasks.splice(${i},1); sync();" class="btn-del">✕</button></td>
             </tr>`).join('');
 
-        // Render Results with Final Result Column
+        // Render Results
         document.getElementById('resultsBody').innerHTML = db.results.map((r, i) => {
             if(r.rem === 'Pass') stats.pass++;
             if(r.rem === 'Resit') stats.resit++;
@@ -209,7 +194,7 @@
             let cls = r.rem === 'Repeat' ? 'row-repeat' : (r.rem === 'Resit' ? 'row-resit' : '');
             return `<tr class="${cls}">
                 <td><small>${r.code}</small></td>
-                <td><strong>${r.name}</strong>${r.isExtra?'<span class="attempt-badge">RE-ATTEMPT</span>':''}</td>
+                <td><strong>${r.name}</strong>${r.isExtra?'<span style="font-size:9px;background:#334155;color:white;padding:2px 4px;margin-left:5px;border-radius:4px;">RE-ATTEMPT</span>':''}</td>
                 <td>${r.sem}</td>
                 <td><input type="text" value="${r.cat}" onchange="updateResult(${i},'cat',this.value)"></td>
                 <td><input type="text" value="${r.ass}" onchange="updateResult(${i},'ass',this.value)"></td>
@@ -220,19 +205,17 @@
                     <option value="Resit" ${r.rem==='Resit'?'selected':''}>Resit</option>
                     <option value="Repeat" ${r.rem==='Repeat'?'selected':''}>Repeat</option>
                 </select></td>
-                <td>${r.isExtra ? `<button onclick="db.results.splice(${i},1); sync();" style="color:red; border:none; background:none; cursor:pointer;">✕</button>` : ''}</td>
+                <td><button onclick="db.results.splice(${i},1); sync();" class="btn-del">✕</button></td>
             </tr>`;
         }).join('');
 
-        // Dashboard Stats
         document.getElementById('passCount').innerText = stats.pass;
         document.getElementById('resitCount').innerText = stats.resit;
         document.getElementById('repeatCount').innerText = stats.repeat;
-        document.getElementById('pendingCount').innerText = stats.total - stats.pass;
-        const comp = Math.round((stats.pass / stats.total) * 100);
+        document.getElementById('totalCount').innerText = stats.total;
+        
+        const comp = stats.total > 0 ? Math.round((stats.pass / stats.total) * 100) : 0;
         document.getElementById('progress-fill').style.width = comp + '%';
-        document.getElementById('progressText').innerText = `Degree Completion: ${comp}%`;
-
         updateChart(stats);
     }
 
@@ -245,15 +228,10 @@
                 labels: ['Passed', 'Resits', 'Repeats'],
                 datasets: [{
                     data: [stats.pass, stats.resit, stats.repeat],
-                    backgroundColor: ['#22c55e', '#facc15', '#ef4444'],
-                    borderRadius: 5
+                    backgroundColor: ['#22c55e', '#facc15', '#ef4444']
                 }]
             },
-            options: {
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
-            }
+            options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
     }
 

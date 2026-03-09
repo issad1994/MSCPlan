@@ -195,4 +195,25 @@
         document.getElementById('passCount').innerText = stats.pass;
         document.getElementById('resitCount').innerText = stats.resit;
         document.getElementById('repeatCount').innerText = stats.repeat;
-        document.getElementById('totalCount').innerText =
+        document.getElementById('totalCount').innerText = stats.total;
+        const comp = stats.total > 0 ? Math.round((stats.pass / stats.total) * 100) : 0;
+        document.getElementById('progress-fill').style.width = comp + '%';
+        updateChart(stats);
+    }
+
+    function updateChart(stats) {
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        if (performanceChart) performanceChart.destroy();
+        performanceChart = new Chart(ctx, { type: 'bar', data: { labels: ['Passed', 'Resits', 'Repeats'], datasets: [{ data: [stats.pass, stats.resit, stats.repeat], backgroundColor: ['#22c55e', '#facc15', '#ef4444'] }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+    }
+
+    function showTab(t) {
+        document.getElementById('tasksSection').classList.toggle('hidden', t !== 'Tasks');
+        document.getElementById('resultsSection').classList.toggle('hidden', t === 'Tasks');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.innerText.includes(t)));
+    }
+    sortResults();
+    render();
+</script>
+</body>
+</html>
